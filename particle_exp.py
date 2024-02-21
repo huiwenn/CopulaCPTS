@@ -6,12 +6,12 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 import pickle
 
-from models import rnn, lstm, bjrnn, cfrnn, copulaCPTS, dplstm
+from models import rnn, lstm, bjrnn, cfrnn, copulaCPTS, dplstm, vanila_copula
 
 def experiment(train, valid, test, name='exp'):
     rnn_model = rnn.rnn(embedding_size=24, input_size=2, output_size=2, horizon=24)
     encdec_model = lstm.lstm_seq2seq( input_size=2, embedding_size=24, target_len = 24)
-    models = [rnn_model, encdec_model]
+    models = [rnn_model] #, encdec_model]
     
     a = np.load(train)
     x_train = torch.tensor(a[:,:35,0,:], dtype=torch.float)
@@ -29,6 +29,7 @@ def experiment(train, valid, test, name='exp'):
     
     UQ = {}
     
+    '''
     print('dprnn')
     dprnn = dplstm.DPRNN(epochs=90,  input_size=2, output_size=2, n_steps=24, dropout_prob=0.1)
     dprnn.fit(x_train, y_train)
@@ -52,7 +53,10 @@ def experiment(train, valid, test, name='exp'):
     copula = copulaCPTS.copulaCPTS(models[1], x_cali, y_cali)
     copula.calibrate()
     UQ['copula-EncDec'] = copula
-
+    '''
+    vanila = vanila_copula.vanila_copula(models[0], x_cali, y_cali)
+    vanila.calibrate()
+    UQ['vanila-copula'] = vanila
     
 
     c = np.load(test)
@@ -92,7 +96,7 @@ def main():
     test = '../nridata/newgen/loc_test_springs2_noise_0.05.npy'
 
     for i in range(3):
-        res = experiment(train, valid, test, name='particle5_sep_run'+str(i))
+        res = experiment(train, valid, test, name='particle5_vanila'+str(i))
         print('run ' +str(i)+ 'done')
         del res
 
@@ -101,7 +105,7 @@ def main():
     test = '../nridata/newgen/loc_test_springs2_noise_0.01.npy'
 
     for i in range(3):
-        res = experiment(train, valid, test, name='particle1_sep_run'+str(i))
+        res = experiment(train, valid, test, name='particle1_vanila'+str(i))
         print('run ' +str(i)+ 'done')
         del res
 
